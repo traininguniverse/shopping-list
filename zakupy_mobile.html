@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista Zakupów - Mobile</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .input-section {
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            border-color: #667eea;
+        }
+
+        button {
+            padding: 15px 25px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #5568d3;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .lista-section {
+            padding: 20px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .lista-pusta {
+            text-align: center;
+            color: #999;
+            padding: 40px 20px;
+            font-size: 18px;
+        }
+
+        .produkt-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .produkt-nazwa {
+            flex: 1;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .produkt-numer {
+            color: #667eea;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .btn-usun {
+            background: #ff4757;
+            padding: 8px 15px;
+            font-size: 14px;
+        }
+
+        .btn-usun:hover {
+            background: #ee3542;
+        }
+
+        .statystyki {
+            padding: 15px 20px;
+            background: #f8f9fa;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        /* Animacja dla usuwania */
+        .produkt-item.usuwanie {
+            animation: slideOut 0.3s ease;
+        }
+
+        @keyframes slideOut {
+            to {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛒 Lista Zakupów</h1>
+            <p>Dodawaj i usuwaj produkty</p>
+        </div>
+
+        <div class="input-section">
+            <div class="input-group">
+                <input 
+                    type="text" 
+                    id="produktInput" 
+                    placeholder="Wpisz produkt..."
+                    autocomplete="off"
+                >
+                <button onclick="dodajProdukt()">Dodaj</button>
+            </div>
+        </div>
+
+        <div class="lista-section" id="listaSection">
+            <div class="lista-pusta" id="listaPusta">
+                Lista jest pusta. Dodaj pierwszy produkt!
+            </div>
+            <div id="listaProduktow"></div>
+        </div>
+
+        <div class="statystyki" id="statystyki">
+            Liczba produktów: <strong id="liczbaProduktow">0</strong>
+        </div>
+    </div>
+
+    <script>
+        // Wczytaj listę z localStorage przy starcie
+        let zakupy = [];
+        
+        function wczytajZPliku() {
+            const zapisane = localStorage.getItem('listaZakupow');
+            if (zapisane) {
+                zakupy = JSON.parse(zapisane);
+                aktualizujListe();
+            }
+        }
+
+        // Zapisz listę do localStorage
+        function zapiszDoPliku() {
+            localStorage.setItem('listaZakupow', JSON.stringify(zakupy));
+        }
+
+        // Dodaj produkt
+        function dodajProdukt() {
+            const input = document.getElementById('produktInput');
+            const produkt = input.value.trim();
+            
+            if (produkt === '') {
+                alert('Wpisz nazwę produktu!');
+                return;
+            }
+            
+            if (zakupy.includes(produkt)) {
+                alert('Ten produkt już jest na liście!');
+                return;
+            }
+            
+            zakupy.push(produkt);
+            input.value = '';
+            input.focus();
+            aktualizujListe();
+            zapiszDoPliku();
+        }
+
+        // Usuń produkt
+        function usunProdukt(produkt) {
+            const index = zakupy.indexOf(produkt);
+            if (index > -1) {
+                // Animacja usuwania
+                const element = event.target.closest('.produkt-item');
+                element.classList.add('usuwanie');
+                
+                setTimeout(() => {
+                    zakupy.splice(index, 1);
+                    aktualizujListe();
+                    zapiszDoPliku();
+                }, 300);
+            }
+        }
+
+        // Aktualizuj wyświetlanie listy
+        function aktualizujListe() {
+            const listaProduktow = document.getElementById('listaProduktow');
+            const listaPusta = document.getElementById('listaPusta');
+            const liczbaProduktow = document.getElementById('liczbaProduktow');
+            
+            listaProduktow.innerHTML = '';
+            
+            if (zakupy.length === 0) {
+                listaPusta.style.display = 'block';
+                liczbaProduktow.textContent = '0';
+            } else {
+                listaPusta.style.display = 'none';
+                liczbaProduktow.textContent = zakupy.length;
+                
+                zakupy.forEach((produkt, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'produkt-item';
+                    div.innerHTML = `
+                        <span class="produkt-numer">${index + 1}.</span>
+                        <span class="produkt-nazwa">${produkt}</span>
+                        <button class="btn-usun" onclick="usunProdukt('${produkt}')">Usuń</button>
+                    `;
+                    listaProduktow.appendChild(div);
+                });
+            }
+        }
+
+        // Obsługa Enter w polu input
+        document.getElementById('produktInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                dodajProdukt();
+            }
+        });
+
+        // Wczytaj listę przy starcie
+        wczytajZPliku();
+    </script>
+</body>
+</html>
+
